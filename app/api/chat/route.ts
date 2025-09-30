@@ -258,7 +258,9 @@ export async function POST(req: Request) {
 
                   // Prepare result message
                   let resultContent = "";
-                  if (typeof result === "string") {
+                  if (!result) {
+                    resultContent = "No result";
+                  } else if (typeof result === "string") {
                     resultContent = result;
                   } else if (result.type === "text") {
                     resultContent = result.text;
@@ -283,7 +285,7 @@ export async function POST(req: Request) {
                   }
 
                   // Add tool result message (only if not screenshot)
-                  if (result.type !== "image") {
+                  if (!result || typeof result === "string" || result.type !== "image") {
                     conversationMessages.push({
                       role: "tool",
                       tool_call_id: toolCall.id,
@@ -301,7 +303,7 @@ export async function POST(req: Request) {
                           toolName: toolCall.function.name,
                           args: args,
                           result:
-                            result.type === "image"
+                            result && typeof result === "object" && result.type === "image"
                               ? { type: "image", data: result.data }
                               : resultContent,
                         },
