@@ -14,24 +14,15 @@ export const ProjectInfo = () => {
         </p>
         <h3 className="text-center text-2xl font-bold">Computer Use Agent</h3>
         <p>
-          This demo showcases a Computer Use Agent built with the{" "}
-          <StyledLink href="https://sdk.vercel.ai">AI SDK</StyledLink>,{" "}
-          <StyledLink href="https://www.anthropic.com/claude/sonnet">
-            Anthropic Claude Sonnet 3.7
+          This demo showcases a Computer Use Agent built with{" "}
+          <StyledLink href="https://www.alibabacloud.com/help/en/model-studio/developer-reference/qwen-vl-api">
+            Qwen 2.5-VL-7B-Instruct
           </StyledLink>
-          , and <StyledLink href="https://e2b.dev">e2b desktop</StyledLink>.
+          {" "}via DashScope, and <StyledLink href="https://e2b.dev">e2b desktop</StyledLink>.
         </p>
         <p>
           {" "}
-          Learn more about{" "}
-          <Link
-            className="text-blue-500 dark:text-blue-400"
-            href="https://sdk.vercel.ai/docs/guides/computer-use"
-            target="_blank"
-          >
-            Computer Use{" "}
-          </Link>
-          with the AI SDK.
+          This agent can control a virtual desktop, execute commands, and interact with applications in real-time using natural language.
         </p>
       </div>
     </motion.div>
@@ -64,7 +55,7 @@ export const DeployButton = () => {
   return (
     <Link
       target="_blank"
-      href={`https://vercel.com/new/clone?project-name=AI+SDK+Computer+Use+Demo&repository-name=ai-sdk-computer-use&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fai-sdk-computer-use&demo-title=AI+SDK+Computer+Use+Demo&demo-url=https%3A%2F%2Fai-sdk-computer-use.vercel.app%2F&demo-description=A+chatbot+application+built+with+Next.js+demonstrating+Anthropic+Claude+3.7+Sonnet%27s+computer+use+capabilities&env=ANTHROPIC_API_KEY,E2B_API_KEY`}
+      href={`https://vercel.com/new/clone?project-name=AI+SDK+Qwen+Computer+Use&repository-name=ai-sdk-qwen-computer-use&repository-url=https%3A%2F%2Fgithub.com%2Fopenapiv1%2Faisdkqwen&demo-title=AI+SDK+Qwen+Computer+Use+Demo&demo-description=A+chatbot+application+built+with+Next.js+demonstrating+Qwen+2.5-VL+computer+use+capabilities&env=DASHSCOPE_API_KEY,E2B_API_KEY`}
       className="flex flex-row gap-2 items-center bg-zinc-900 px-3 py-2 rounded-md text-zinc-50 hover:bg-zinc-950 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-50"
     >
       <VercelIcon size={14} />

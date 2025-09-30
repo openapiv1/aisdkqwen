@@ -1,5 +1,5 @@
-import { anthropic } from "@ai-sdk/anthropic";
 import { getDesktop } from "./utils";
+import type { ChatCompletionTool } from "openai/resources/chat/completions";
 
 const wait = async (seconds: number) => {
   await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
@@ -7,150 +7,207 @@ const wait = async (seconds: number) => {
 
 export const resolution = { x: 1024, y: 768 };
 
-export const computerTool = (sandboxId: string) =>
-  anthropic.tools.computer_20250124({
-    displayWidthPx: resolution.x,
-    displayHeightPx: resolution.y,
-    displayNumber: 1,
-    execute: async ({
-      action,
-      coordinate,
-      text,
-      duration,
-      scroll_amount,
-      scroll_direction,
-      start_coordinate,
-    }) => {
-      const desktop = await getDesktop(sandboxId);
-
-      switch (action) {
-        case "screenshot": {
-          const image = await desktop.screenshot();
-          // Convert image data to base64 immediately
-          const base64Data = Buffer.from(image).toString("base64");
-          return {
-            type: "image" as const,
-            data: base64Data,
-          };
-        }
-        case "wait": {
-          if (!duration) throw new Error("Duration required for wait action");
-          const actualDuration = Math.min(duration, 2);
-          await wait(actualDuration);
-          return {
-            type: "text" as const,
-            text: `Waited for ${actualDuration} seconds`,
-          };
-        }
-        case "left_click": {
-          if (!coordinate)
-            throw new Error("Coordinate required for left click action");
-          const [x, y] = coordinate;
-          await desktop.moveMouse(x, y);
-          await desktop.leftClick();
-          return { type: "text" as const, text: `Left clicked at ${x}, ${y}` };
-        }
-        case "double_click": {
-          if (!coordinate)
-            throw new Error("Coordinate required for double click action");
-          const [x, y] = coordinate;
-          await desktop.moveMouse(x, y);
-          await desktop.doubleClick();
-          return {
-            type: "text" as const,
-            text: `Double clicked at ${x}, ${y}`,
-          };
-        }
-        case "right_click": {
-          if (!coordinate)
-            throw new Error("Coordinate required for right click action");
-          const [x, y] = coordinate;
-          await desktop.moveMouse(x, y);
-          await desktop.rightClick();
-          return { type: "text" as const, text: `Right clicked at ${x}, ${y}` };
-        }
-        case "mouse_move": {
-          if (!coordinate)
-            throw new Error("Coordinate required for mouse move action");
-          const [x, y] = coordinate;
-          await desktop.moveMouse(x, y);
-          return { type: "text" as const, text: `Moved mouse to ${x}, ${y}` };
-        }
-        case "type": {
-          if (!text) throw new Error("Text required for type action");
-          await desktop.write(text);
-          return { type: "text" as const, text: `Typed: ${text}` };
-        }
-        case "key": {
-          if (!text) throw new Error("Key required for key action");
-          await desktop.press(text === "Return" ? "enter" : text);
-          return { type: "text" as const, text: `Pressed key: ${text}` };
-        }
-        case "scroll": {
-          if (!scroll_direction)
-            throw new Error("Scroll direction required for scroll action");
-          if (!scroll_amount)
-            throw new Error("Scroll amount required for scroll action");
-
-          await desktop.scroll(
-            scroll_direction as "up" | "down",
-            scroll_amount,
-          );
-          return { type: "text" as const, text: `Scrolled ${text}` };
-        }
-        case "left_click_drag": {
-          if (!start_coordinate || !coordinate)
-            throw new Error("Coordinate required for mouse move action");
-          const [startX, startY] = start_coordinate;
-          const [endX, endY] = coordinate;
-
-          await desktop.drag([startX, startY], [endX, endY]);
-          return {
-            type: "text" as const,
-            text: `Dragged mouse from ${startX}, ${startY} to ${endX}, ${endY}`,
-          };
-        }
-        default:
-          throw new Error(`Unsupported action: ${action}`);
-      }
+// OpenAI-compatible tool definition for computer use
+export const computerToolDefinition: ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "computer",
+    description: "Use a computer to perform actions like taking screenshots, clicking, typing, and more. All coordinates are in pixels relative to a screen with resolution " + resolution.x + "x" + resolution.y + ".",
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: [
+            "screenshot",
+            "wait",
+            "left_click",
+            "double_click", 
+            "right_click",
+            "mouse_move",
+            "type",
+            "key",
+            "scroll",
+            "left_click_drag",
+          ],
+          description: "The action to perform on the computer",
+        },
+        coordinate: {
+          type: "array",
+          items: { type: "number" },
+          description: "X,Y pixel coordinates for actions that need positioning (click, move, etc.)",
+        },
+        text: {
+          type: "string",
+          description: "Text to type or key to press",
+        },
+        duration: {
+          type: "number",
+          description: "Duration in seconds for wait action",
+        },
+        scroll_amount: {
+          type: "number",
+          description: "Amount to scroll",
+        },
+        scroll_direction: {
+          type: "string",
+          enum: ["up", "down"],
+          description: "Direction to scroll",
+        },
+        start_coordinate: {
+          type: "array",
+          items: { type: "number" },
+          description: "Starting coordinates for drag action",
+        },
+      },
+      required: ["action"],
     },
-    experimental_toToolResultContent(result) {
-      if (typeof result === "string") {
-        return [{ type: "text", text: result }];
-      }
-      if (result.type === "image" && result.data) {
-        return [
-          {
-            type: "image",
-            data: result.data,
-            mimeType: "image/png",
-          },
-        ];
-      }
-      if (result.type === "text" && result.text) {
-        return [{ type: "text", text: result.text }];
-      }
-      throw new Error("Invalid result format");
-    },
-  });
+  },
+};
 
-export const bashTool = (sandboxId?: string) =>
-  anthropic.tools.bash_20250124({
-    execute: async ({ command }) => {
-      const desktop = await getDesktop(sandboxId);
+// Execute computer tool actions
+export async function executeComputerTool(
+  sandboxId: string,
+  args: {
+    action: string;
+    coordinate?: number[];
+    text?: string;
+    duration?: number;
+    scroll_amount?: number;
+    scroll_direction?: string;
+    start_coordinate?: number[];
+  }
+) {
+  const desktop = await getDesktop(sandboxId);
+  const { action, coordinate, text, duration, scroll_amount, scroll_direction, start_coordinate } = args;
 
-      try {
-        const result = await desktop.commands.run(command);
-        return (
-          result.stdout || "(Command executed successfully with no output)"
-        );
-      } catch (error) {
-        console.error("Bash command failed:", error);
-        if (error instanceof Error) {
-          return `Error executing command: ${error.message}`;
-        } else {
-          return `Error executing command: ${String(error)}`;
-        }
-      }
+  switch (action) {
+    case "screenshot": {
+      const image = await desktop.screenshot();
+      const base64Data = Buffer.from(image).toString("base64");
+      return {
+        type: "image" as const,
+        data: base64Data,
+      };
+    }
+    case "wait": {
+      if (!duration) throw new Error("Duration required for wait action");
+      const actualDuration = Math.min(duration, 2);
+      await wait(actualDuration);
+      return {
+        type: "text" as const,
+        text: `Waited for ${actualDuration} seconds`,
+      };
+    }
+    case "left_click": {
+      if (!coordinate)
+        throw new Error("Coordinate required for left click action");
+      const [x, y] = coordinate;
+      await desktop.moveMouse(x, y);
+      await desktop.leftClick();
+      return { type: "text" as const, text: `Left clicked at ${x}, ${y}` };
+    }
+    case "double_click": {
+      if (!coordinate)
+        throw new Error("Coordinate required for double click action");
+      const [x, y] = coordinate;
+      await desktop.moveMouse(x, y);
+      await desktop.doubleClick();
+      return {
+        type: "text" as const,
+        text: `Double clicked at ${x}, ${y}`,
+      };
+    }
+    case "right_click": {
+      if (!coordinate)
+        throw new Error("Coordinate required for right click action");
+      const [x, y] = coordinate;
+      await desktop.moveMouse(x, y);
+      await desktop.rightClick();
+      return { type: "text" as const, text: `Right clicked at ${x}, ${y}` };
+    }
+    case "mouse_move": {
+      if (!coordinate)
+        throw new Error("Coordinate required for mouse move action");
+      const [x, y] = coordinate;
+      await desktop.moveMouse(x, y);
+      return { type: "text" as const, text: `Moved mouse to ${x}, ${y}` };
+    }
+    case "type": {
+      if (!text) throw new Error("Text required for type action");
+      await desktop.write(text);
+      return { type: "text" as const, text: `Typed: ${text}` };
+    }
+    case "key": {
+      if (!text) throw new Error("Key required for key action");
+      await desktop.press(text === "Return" ? "enter" : text);
+      return { type: "text" as const, text: `Pressed key: ${text}` };
+    }
+    case "scroll": {
+      if (!scroll_direction)
+        throw new Error("Scroll direction required for scroll action");
+      if (!scroll_amount)
+        throw new Error("Scroll amount required for scroll action");
+
+      await desktop.scroll(
+        scroll_direction as "up" | "down",
+        scroll_amount,
+      );
+      return { type: "text" as const, text: `Scrolled ${scroll_direction}` };
+    }
+    case "left_click_drag": {
+      if (!start_coordinate || !coordinate)
+        throw new Error("Coordinates required for drag action");
+      const [startX, startY] = start_coordinate;
+      const [endX, endY] = coordinate;
+
+      await desktop.drag([startX, startY], [endX, endY]);
+      return {
+        type: "text" as const,
+        text: `Dragged mouse from ${startX}, ${startY} to ${endX}, ${endY}`,
+      };
+    }
+    default:
+      throw new Error(`Unsupported action: ${action}`);
+  }
+}
+
+// OpenAI-compatible tool definition for bash
+export const bashToolDefinition: ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "bash",
+    description: "Execute bash commands on the computer. Use this to run commands, create files and folders, install software, etc.",
+    parameters: {
+      type: "object",
+      properties: {
+        command: {
+          type: "string",
+          description: "The bash command to execute",
+        },
+      },
+      required: ["command"],
     },
-  });
+  },
+};
+
+// Execute bash tool actions
+export async function executeBashTool(
+  sandboxId: string,
+  args: { command: string }
+) {
+  const desktop = await getDesktop(sandboxId);
+  const { command } = args;
+
+  try {
+    const result = await desktop.commands.run(command);
+    return result.stdout || "(Command executed successfully with no output)";
+  } catch (error) {
+    console.error("Bash command failed:", error);
+    if (error instanceof Error) {
+      return `Error executing command: ${error.message}`;
+    } else {
+      return `Error executing command: ${String(error)}`;
+    }
+  }
+}
