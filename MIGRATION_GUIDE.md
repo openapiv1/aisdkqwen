@@ -38,7 +38,7 @@ const openai = new OpenAI({
 });
 
 const completion = await openai.chat.completions.create({
-  model: "qwen2.5-vl-7b-instruct",
+  model: "qwen3-vl-235b-a22b-instruct",
   // ...
 });
 ```
@@ -61,7 +61,7 @@ The new implementation uses OpenAI's streaming API with proper tool execution:
 
 ```typescript
 const completion = await openai.chat.completions.create({
-  model: "qwen2.5-vl-7b-instruct",
+  model: "qwen3-vl-235b-a22b-instruct",
   messages: conversationMessages,
   tools: [computerToolDefinition, bashToolDefinition],
   tool_choice: "auto",
@@ -172,7 +172,7 @@ To verify the migration:
 - Check E2B service status at https://e2b.dev/
 
 ### Issue: Model not responding
-- Verify the model name is exactly: `qwen2.5-vl-7b-instruct`
+- Verify the model name is exactly: `qwen3-vl-235b-a22b-instruct`
 - Check DashScope account has access to this model
 
 ### Issue: Tools not executing

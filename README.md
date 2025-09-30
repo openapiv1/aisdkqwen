@@ -3,7 +3,7 @@
 </a>
 
 <p align="center">
-  An open-source AI chatbot app demonstrating Qwen 2.5-VL's computer use capabilities via DashScope, built with Next.js and E2B sandbox.
+  An open-source AI chatbot app demonstrating Qwen 3-VL's computer use capabilities via DashScope, built with Next.js and E2B sandbox.
 </p>
 
 <p align="center">
@@ -16,8 +16,9 @@
 
 ## Features
 
-- Streaming text responses with live AI message generation powered by Qwen 2.5-VL-7B-Instruct model via DashScope API.
+- Streaming text responses with live AI message generation powered by Qwen 3-VL-235B-A22B-Instruct model via DashScope API.
 - Integration with Qwen's vision and language capabilities for computer use and bash tool actions.
+- Multi-step action execution with AI performing multiple actions in sequence
 - Sandbox environment with [e2b](https://e2b.dev) for secure execution and desktop control.
 - Real-time streaming of AI responses and action execution.
 - [shadcn/ui](https://ui.shadcn.com/) components for a modern, responsive UI powered by [Tailwind CSS](https://tailwindcss.com).
@@ -27,7 +28,7 @@
 
 You can deploy your own version to Vercel by clicking the button below:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=AI+SDK+Qwen+Computer+Use&repository-name=ai-sdk-qwen-computer-use&repository-url=https%3A%2F%2Fgithub.com%2Fopenapiv1%2Faisdkqwen&demo-title=AI+SDK+Qwen+Computer+Use+Demo&demo-description=A+chatbot+application+built+with+Next.js+demonstrating+Qwen+2.5-VL+computer+use+capabilities&env=DASHSCOPE_API_KEY,E2B_API_KEY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?project-name=AI+SDK+Qwen+Computer+Use&repository-name=ai-sdk-qwen-computer-use&repository-url=https%3A%2F%2Fgithub.com%2Fopenapiv1%2Faisdkqwen&demo-title=AI+SDK+Qwen+Computer+Use+Demo&demo-description=A+chatbot+application+built+with+Next.js+demonstrating+Qwen+3-VL+computer+use+capabilities&env=DASHSCOPE_API_KEY,E2B_API_KEY)
 
 ## Running Locally
 
