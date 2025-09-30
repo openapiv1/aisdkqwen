@@ -49,22 +49,26 @@ Masz dostęp do narzędzi:
 - computer: Pozwala na przechwytywanie ekranu, klikanie, pisanie, naciskanie klawiszy, przewijanie i poruszanie myszą
 - bash: Pozwala na wykonywanie poleceń bash na komputerze
 
-KRYTYCZNIE WAŻNE - PROAKTYWNA KOMUNIKACJA:
+KRYTYCZNIE WAŻNE - PROAKTYWNA KOMUNIKACJA I WIELOETAPOWE DZIAŁANIE:
 - ZAWSZE najpierw wyślij wiadomość tekstową opisującą DOKŁADNIE co zamierzasz zrobić, zanim wykonasz jakiekolwiek akcje
-- Podziel złożone zadania na kroki i przed każdym krokiem powiedz użytkownikowi co planujesz
-- Wykonuj wiele akcji w jednym zadaniu bez przerywania - kontynuuj aż do pełnego wykonania zadania
-- Po każdej akcji krótko podsumuj co zostało zrobione i co będzie dalej
-- Twoje działania mają być w pełni transparentne - użytkownik MUSI wiedzieć co robisz zanim to zrobisz
-- Nie pytaj o pozwolenie, po prostu informuj co będziesz robić i rób to
+- ZAWSZE wykonuj WIELE akcji w jednej turze - NIE PRZERYWAJ po jednej akcji!
+- Dla KAŻDEGO zadania zaplanuj i wykonaj WSZYSTKIE potrzebne kroki naraz (np. otwarcie przeglądarki, kliknięcie, wpisanie tekstu, naciśnięcie Enter - to wszystko w jednej turze)
+- NIE PYTAJ o pozwolenie - po prostu informuj i DZIAŁAJ
+- Po każdej grupie akcji zrób screenshot aby zobaczyć rezultat
+- Twoje działania mają być INTENSYWNE i CIĄGŁE - rób tak dużo jak potrzeba aby zadanie było skończone
 
-PRZYKŁAD DOBREGO ZACHOWANIA:
-1. "Zaraz otwieram Firefox, żeby wyszukać informacje o..."
-2. [wykonaj akcję otwarcia Firefox]
-3. "Teraz klikam w pasek adresu i wpisuję adres..."
-4. [wykonaj akcje]
-5. "Widzę wyniki, teraz klikam w pierwszy link..."
+WZÓR DZIAŁANIA (wszystko w jednej turze):
+1. "Zaraz wykonam następujące działania: otwieram Firefox, klikam w pasek adresu, wpisuję URL i naciskam Enter"
+2. [wykonaj WSZYSTKIE akcje: left_click na Firefox, wait 2, left_click na pasek, type URL, key Enter]
+3. [zrób screenshot]
+4. "Strona się załadowała, teraz klikam w pierwszy link..."
+5. [wykonaj kolejne akcje]
 
-Zawsze najpierw przeanalizuj zrzut ekranu, powiedz użytkownikowi co widzisz i co zamierzasz zrobić, a następnie wykonaj wszystkie potrzebne akcje.
+PAMIĘTAJ: 
+- Wykonuj minimum 3-5 akcji w jednej turze zanim zakończysz odpowiedź
+- Zawsze po akcjach zrób screenshot aby zobaczyć efekt
+- Kontynuuj dopóki zadanie nie zostanie w pełni wykonane
+- Zawsze najpierw przeanalizuj zrzut ekranu, powiedz użytkownikowi co widzisz i co zamierzasz zrobić, a następnie wykonaj WSZYSTKIE potrzebne akcje naraz
 
 If the browser opens with a setup wizard, YOU MUST IGNORE IT and move straight to the next step (e.g. input the url in the search bar).`;
 
@@ -149,7 +153,7 @@ export async function POST(req: Request) {
 
           while (continueLoop) {
             const completion = await openai.chat.completions.create({
-              model: "qwen2.5-vl-7b-instruct",
+              model: "qwen3-vl-235b-a22b-instruct",
               messages: conversationMessages,
               tools: [computerToolDefinition, bashToolDefinition],
               tool_choice: "auto",
@@ -227,6 +231,9 @@ export async function POST(req: Request) {
               });
 
               // Execute each tool call
+              let hasScreenshot = false;
+              let screenshotData = "";
+              
               for (const toolCall of toolCalls) {
                 try {
                   const args = JSON.parse(toolCall.function.arguments);
@@ -265,33 +272,17 @@ export async function POST(req: Request) {
                   } else if (result.type === "text") {
                     resultContent = result.text;
                   } else if (result.type === "image") {
-                    resultContent = "Screenshot captured successfully";
-                    // For screenshots, we'll add the image in the next message
-                    conversationMessages.push({
-                      role: "user",
-                      content: [
-                        {
-                          type: "text",
-                          text: "Here is the current screenshot:",
-                        },
-                        {
-                          type: "image_url",
-                          image_url: {
-                            url: `data:image/png;base64,${result.data}`,
-                          },
-                        },
-                      ],
-                    });
+                    resultContent = "Screenshot captured successfully - analyze what you see and continue with more actions to complete the task";
+                    hasScreenshot = true;
+                    screenshotData = result.data;
                   }
 
-                  // Add tool result message (only if not screenshot)
-                  if (!result || typeof result === "string" || result.type !== "image") {
-                    conversationMessages.push({
-                      role: "tool",
-                      tool_call_id: toolCall.id,
-                      content: resultContent,
-                    });
-                  }
+                  // Add tool result message
+                  conversationMessages.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: resultContent,
+                  });
 
                   // Send tool result to client
                   controller.enqueue(
@@ -319,6 +310,25 @@ export async function POST(req: Request) {
                     content: `Error: ${error}`,
                   });
                 }
+              }
+
+              // If there was a screenshot, add it as a vision message
+              if (hasScreenshot) {
+                conversationMessages.push({
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: "Here is the current screenshot. Analyze what you see and CONTINUE with more actions. Remember to perform multiple actions in sequence to complete the task.",
+                    },
+                    {
+                      type: "image_url",
+                      image_url: {
+                        url: `data:image/png;base64,${screenshotData}`,
+                      },
+                    },
+                  ],
+                });
               }
 
               // Continue the loop to get next response

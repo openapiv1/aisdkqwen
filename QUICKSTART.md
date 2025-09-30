@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started with the AI Computer Use Agent powered by Qwen 2.5-VL in just a few steps!
+Get started with the AI Computer Use Agent powered by Qwen 3-VL in just a few steps!
 
 ## Prerequisites
 
@@ -101,7 +101,7 @@ Once the application is running:
 ## How It Works
 
 1. **User Input:** You type a command or question
-2. **AI Processing:** Qwen 2.5-VL analyzes your request
+2. **AI Processing:** Qwen 3-VL analyzes your request
 3. **Tool Execution:** The AI decides which tools to use (computer actions or bash commands)
 4. **Streaming Response:** You see the AI's thoughts and actions in real-time
 5. **Result:** The AI completes the task and reports back
@@ -122,7 +122,7 @@ Execute any bash command in the secure E2B sandbox:
 - System information
 
 ### Vision Capabilities
-Qwen 2.5-VL can see and understand screenshots:
+Qwen 3-VL can see and understand screenshots:
 - Identify UI elements
 - Read text from images
 - Navigate applications visually
@@ -156,7 +156,7 @@ If the E2B sandbox fails to initialize:
 ### Model Not Found
 
 If you get a "model not found" error:
-1. Verify the model name is exactly: `qwen2.5-vl-7b-instruct`
+1. Verify the model name is exactly: `qwen3-vl-235b-a22b-instruct`
 2. Check your DashScope account has access to this model
 3. Try using the DashScope console to test the model directly
 
@@ -171,11 +171,12 @@ Edit `app/api/chat/route.ts` to customize the AI's behavior by modifying the `SY
 To use a different Qwen model, edit the model name in `app/api/chat/route.ts`:
 
 ```typescript
-model: "qwen2.5-vl-7b-instruct", // Change this
+model: "qwen3-vl-235b-a22b-instruct", // Change this
 ```
 
 Available models:
-- `qwen2.5-vl-7b-instruct` (default)
+- `qwen3-vl-235b-a22b-instruct` (default, most capable)
+- `qwen2.5-vl-7b-instruct`
 - `qwen-vl-plus`
 - `qwen-vl-max`
 
